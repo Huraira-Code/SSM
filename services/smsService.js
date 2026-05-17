@@ -9,7 +9,7 @@ export const sendOtpSMS = async (phone, otp) => {
     try {
         const message = await client.messages.create({
             body: `Your verification OTP is: ${otp}`,
-            from: process.env.TWILIO_PHONE_NUMBER,
+            from: +17408753426,
             to: phone,
         });
 
