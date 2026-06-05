@@ -35,14 +35,14 @@ export const createVerification = async (req, res) => {
         );
         console.log(phone)
 
-        // const smsResult = await sendOtpSMS(phone, verificationCode);
+        const smsResult = await sendOtpSMS(phone, verificationCode);
 
-        // if (!smsResult.success) {
-        //     return res.status(500).json({
-        //         success: false,
-        //         message: "Failed to send OTP SMS",
-        //     });
-        // }
+        if (!smsResult.success) {
+            return res.status(500).json({
+                success: false,
+                message: "Failed to send OTP SMS",
+            });
+        }
         // Create verification
         const verification = await Verification.create({
             customerId,

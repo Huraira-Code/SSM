@@ -1,30 +1,65 @@
 import Log from "../models/LogModel.js";
 import Customer from "../models/CustomerModel.js";
 
-const compareSignatures = async (
-  originalSignature,
-  uploadedSignature
-) => {
+import axios from "axios";
+import FormData from "form-data";
 
-  /*
-    Here you will call:
-    - AI API
-    - Python ML model
-    - OpenCV
-    - Gemini Vision
-    - DeepSeek
-    - Custom CNN model
-  */
+/**
+ * Compare signatures using Flask API
+ */
+const compareSignatures = async (originalSignature, uploadedSignature) => {
+  try {
+    // 1. Download images as buffers
+    const [img1Res, img2Res] = await Promise.all([
+      axios.get(originalSignature, { responseType: "arraybuffer" }),
+      axios.get(uploadedSignature, { responseType: "arraybuffer" }),
+    ]);
 
-  // Temporary dummy response
-  return {
-    matchPercentage: 82,
-    bulletResponse: [
-      "Signature shape is mostly similar",
-      "Pressure pattern slightly differs",
-      "Possible genuine signature with variation",
-    ],
-  };
+    // 2. Create FormData
+    const formData = new FormData();
+
+    formData.append("image1", Buffer.from(img1Res.data), {
+      filename: "image1.png",
+      contentType: "image/png",
+    });
+
+    formData.append("image2", Buffer.from(img2Res.data), {
+      filename: "image2.png",
+      contentType: "image/png",
+    });
+
+    // 3. Send to Flask API
+    const response = await axios.post(
+      "https://hurairashahid-signature-api.hf.space/compare-signatures",
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+        },
+      }
+    );
+
+    const data = response.data;
+
+    // 4. Convert to your format
+    return {
+      matchPercentage: Math.round(data.similarity * 100),
+      bulletResponse: [
+        data.result === "same"
+          ? "Signatures are highly similar"
+          : "Signatures show noticeable differences",
+        "AI structural similarity analysis completed",
+        `Confidence score: ${Math.round(data.similarity * 100)}%`,
+      ],
+    };
+  } catch (error) {
+    console.error("Signature compare error:", error.message);
+
+    return {
+      matchPercentage: 0,
+      bulletResponse: ["Error comparing signatures", error.message],
+    };
+  }
 };
 
 export const createLog = async (req, res) => {

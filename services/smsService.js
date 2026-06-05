@@ -1,31 +1,25 @@
-import twilio from "twilio";
-
-const client = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN
-);
+import axios from "axios";
 
 export const sendOtpSMS = async (phone, otp) => {
     try {
-        const message = await client.messages.create({
-            body: `Your verification OTP is: ${otp}`,
-            from: "+17408753426",
-            to: phone,
+        const response = await axios.post("https://fyphelper.com/send-otp", {
+            phone: phone,
+            otp: otp
         });
 
-        console.log("OTP SENT SID:", message.sid);
+        console.log("OTP SENT RESPONSE:", response.data);
 
         return {
             success: true,
-            sid: message.sid,
+            data: response.data,
         };
 
     } catch (error) {
-        console.error("SMS ERROR:", error);
+        console.error("SMS ERROR:", error.response?.data || error.message);
 
         return {
             success: false,
-            error: error.message,
+            error: error.response?.data?.message || error.message,
         };
     }
 };
