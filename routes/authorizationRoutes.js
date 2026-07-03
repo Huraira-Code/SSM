@@ -1,15 +1,32 @@
 const express = require('express');
-const { createAuthorization, getCustomerAuthorizations, verifyAuthorization } = require('../controllers/AuthorizationController');
+const { 
+  createAuthorization, 
+  getCustomerAuthorizations, 
+  verifyAuthorization,
+  updateAuthorization, // Added
+  deleteAuthorization  // Added
+} = require('../controllers/AuthorizationController');
+
 const router = express.Router();
 
-// Route to create a new authorization slip
-// POST /api/authorizations
-router.get('/customer/:customerId', getCustomerAuthorizations);
-
+// @desc    Create a new authorization slip
+// @route   POST /api/authorizations
 router.post('/', createAuthorization);
 
-// Route to get all authorizations for a specific customer
-// GET /api/authorizations/customer/:customerId
+// @desc    Get all authorizations for a specific customer
+// @route   GET /api/authorizations/customer/:customerId
+router.get('/customer/:customerId', getCustomerAuthorizations);
+
+// @desc    Verify authorization slip before proceeding
+// @route   POST /api/authorizations/verify
 router.post("/verify", verifyAuthorization);
+
+// @desc    Update an existing authorization slip
+// @route   PUT /api/authorizations/:id
+router.put('/:id', updateAuthorization);
+
+// @desc    Delete an authorization slip
+// @route   DELETE /api/authorizations/:id
+router.delete('/:id', deleteAuthorization);
 
 module.exports = router;

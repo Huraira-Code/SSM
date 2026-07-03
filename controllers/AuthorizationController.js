@@ -46,7 +46,6 @@ const createAuthorization = async (req, res) => {
     }
 
     const newAuth = new Authorization(normalizedData);
-
     const savedAuth = await newAuth.save();
 
     res.status(201).json({
@@ -159,9 +158,82 @@ const verifyAuthorization = async (req, res) => {
   }
 };
 
+
+// @desc    Update an existing authorization slip
+// @route   PUT /api/authorizations/:id
+const updateAuthorization = async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Normalize data in case fields are passed using different formats
+    const updateData = { ...req.body };
+    if (req.body.cnicNumber) updateData.recipientCnic = req.body.cnicNumber;
+    if (req.body.phone) updateData.recipientPhoneNumber = req.body.phone;
+
+    // Find and update the authorization slip
+    // new: true returns the modified document rather than the original
+    // runValidators: true ensures updates obey your Mongoose schema rules
+    const updatedAuth = await Authorization.findByIdAndUpdate(
+      id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedAuth) {
+      return res.status(404).json({
+        success: false,
+        message: "Authorization slip not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Authorization updated successfully",
+      data: updatedAuth
+    });
+  } catch (error) {
+    console.error("Update Auth Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating authorization."
+    });
+  }
+};
+
+
+// @desc    Delete an authorization slip
+// @route   DELETE /api/authorizations/:id
+const deleteAuthorization = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deletedAuth = await Authorization.findByIdAndDelete(id);
+
+    if (!deletedAuth) {
+      return res.status(404).json({
+        success: false,
+        message: "Authorization slip not found"
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Authorization slip deleted successfully"
+    });
+  } catch (error) {
+    console.error("Delete Auth Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while deleting authorization."
+    });
+  }
+};
+
+
 module.exports = {
   createAuthorization,
   getCustomerAuthorizations,
-  verifyAuthorization
+  verifyAuthorization,
+  updateAuthorization,
+  deleteAuthorization
 };
-
