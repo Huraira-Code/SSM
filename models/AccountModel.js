@@ -32,6 +32,10 @@ const accountSchema = new mongoose.Schema({
   bankId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Bank",
+  },
+  active :{
+    type:Boolean,
+    default:true
   }
 }, {
   timestamps: true

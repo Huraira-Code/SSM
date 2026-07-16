@@ -50,7 +50,7 @@ export const createBank = async (req, res) => {
 export const getAllBanks = async (req, res) => {
   try {
     // .populate('managerId') pulls the Manager's name/email instead of just showing the ID
-    const banks = await Bank.find().populate("managerId", "name email");
+    const banks = await Bank.find().populate("managerId", "name email active");
     res.status(200).json(banks);
   } catch (error) {
     res.status(500).json({ message: "Error fetching banks", error: error.message });

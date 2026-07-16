@@ -143,16 +143,81 @@ export const getCustomerById = async (req, res) => {
 // --- Edit Customer Details ---
 export const updateCustomer = async (req, res) => {
   try {
+    const { id } = req.params;
+    
+    // Create a base update object from req.body
+    const updateData = { ...req.body };
+
+    // 🔥 FIX: Clean out fields that aren't actual files or strings (e.g., [object Object] or "{}")
+    const imageFields = ['profilePicture', 'signatureImage', 'signature', 'cnicFront', 'cnicBack'];
+    imageFields.forEach(field => {
+      if (
+        !updateData[field] || 
+        updateData[field] === "{}" || 
+        updateData[field] === "[object Object]" || 
+        typeof updateData[field] === "object"
+      ) {
+        delete updateData[field];
+      }
+    });
+
+    // 1. Map uploaded files from req.files if present
+    if (req.files) {
+      if (req.files.signature) {
+        updateData.signatureImage = req.files.signature[0].path;
+      }
+      if (req.files.profilePicture) {
+        updateData.profilePicture = req.files.profilePicture[0].path;
+      }
+      
+      // Map to nested cnicImages structure without wiping out unedited sibling fields
+      if (req.files.cnicFront) {
+        updateData["cnicImages.front"] = req.files.cnicFront[0].path;
+      }
+      if (req.files.cnicBack) {
+        updateData["cnicImages.back"] = req.files.cnicBack[0].path;
+      }
+    }
+
+    // 2. Safely parse and preserve structure for sub-objects/arrays
+    if (updateData.fatherName) updateData["familyDetail.fatherName"] = updateData.fatherName;
+    if (updateData.fatherCnic) updateData["familyDetail.fatherCnic"] = updateData.fatherCnic;
+    if (updateData.motherName) updateData["familyDetail.motherName"] = updateData.motherName;
+    if (updateData.motherCnic) updateData["familyDetail.motherCnic"] = updateData.motherCnic;
+
+    if (updateData.dob) {
+      updateData.dateOfBirth = updateData.dob;
+    }
+
+    // Process structured array data for incoming email parameters
+    if (updateData.emails && typeof updateData.emails === "string") {
+      updateData.emails = [updateData.emails];
+    } else if (updateData.emails) {
+      updateData.emails = Object.values(updateData.emails).filter(Boolean);
+    }
+
+    // Clean up temporary top-level properties so they aren't written to the DB root
+    const cleanKeys = ["fatherName", "fatherCnic", "motherName", "motherCnic", "dob", "password"];
+    cleanKeys.forEach(key => delete updateData[key]);
+
+    // 3. Execute update using flattened key notation
     const updatedCustomer = await Customer.findByIdAndUpdate(
-      req.params.id,
-      { $set: req.body }, // Using $set allows updating nested fields properly
+      id,
+      { $set: updateData }, 
       { new: true, runValidators: true }
     );
 
-    if (!updatedCustomer) return res.status(404).json({ message: "Customer not found" });
+    if (!updatedCustomer) {
+      return res.status(404).json({ message: "Customer not found" });
+    }
 
-    res.status(200).json({ message: "Customer updated successfully", customer: updatedCustomer });
+    res.status(200).json({ 
+      message: "Customer updated successfully", 
+      customer: updatedCustomer 
+    });
+
   } catch (error) {
+    console.error("Error updating customer:", error);
     res.status(500).json({ message: "Error updating customer", error: error.message });
   }
 };

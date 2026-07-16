@@ -134,3 +134,90 @@ export const getAllManagers = async (req, res) => {
         res.status(500).json({ message: "Error fetching managers", error: error.message });
     }
 };
+
+// --- Update Profile (Name, Email, Password, Address, and Image) ---
+export const updateProfile = async (req, res) => {
+    try {
+        const { id } = req.params; 
+        const { name, email, password, address } = req.body;
+
+        // 1. Find the account
+        const account = await Account.findById(id);
+        if (!account) {
+            return res.status(404).json({ message: "Account not found" });
+        }
+
+        // 2. Check email uniqueness if it's being changed
+        if (email && email !== account.email) {
+            const emailExists = await Account.findOne({ email });
+            if (emailExists) {
+                return res.status(400).json({ message: "Email already in use" });
+            }
+            account.email = email;
+        }
+
+        // 3. Update text fields if provided
+        if (name) account.name = name;
+        if (address) account.address = address;
+
+        // 4. Handle Image Update if a new file is uploaded
+        if (req.file) {
+            account.image = req.file.path; // Updates to the new Cloudinary URL or file path
+        }
+
+        // 5. If password is provided, hash it
+        if (password) {
+            const salt = await bcrypt.genSalt(10);
+            account.password = await bcrypt.hash(password, salt);
+        }
+
+        // 6. Save the updated document
+        await account.save();
+
+        // Exclude password from the response
+        const updatedUser = account.toObject();
+        delete updatedUser.password;
+
+        res.status(200).json({
+            message: "Profile updated successfully",
+            user: updatedUser
+        });
+
+    } catch (error) {
+        console.log("error", error);
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};
+
+
+// --- Toggle Account Status (True <-> False) ---
+export const toggleAccountStatus = async (req, res) => {
+    try {
+        const { id } = req.params; // Or req.user.id depending on your architecture
+
+        // Using an aggregation pipeline to toggle the boolean value atomically
+        const account = await Account.findByIdAndUpdate(
+            id,
+            [
+                { 
+                    $set: { active: { $not: "$active" } } 
+                }
+            ],
+            { new: true } // Returns the updated document
+        ).select("-password");
+
+        if (!account) {
+            return res.status(404).json({ message: "Account not found" });
+        }
+
+        // Determine message based on the new state
+        const statusMessage = account.active ? "activated" : "deactivated";
+
+        res.status(200).json({
+            message: `Account ${statusMessage} successfully`,
+            account
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Server error", error: error.message });
+    }
+};

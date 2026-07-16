@@ -1,8 +1,9 @@
 import axios from "axios";
+const SMS_API_URL = process.env.SMS_API_URL;
 
 export const sendOtpSMS = async (phone, otp) => {
     try {
-        const response = await axios.post("https://fyphelper.com/send-otp", {
+        const response = await axios.post(`${SMS_API_URL}/send-otp`, {
             phone: phone,
             otp: otp
         });

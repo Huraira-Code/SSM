@@ -13,23 +13,28 @@ import upload from "../middlewares/upload.js";
 
 const router = express.Router();
 
-router.post(
-  "/",
-  upload.fields([
-    { name: "signature", maxCount: 1 },
-    { name: "profilePicture", maxCount: 1 },
-    { name: "cnicFront", maxCount: 1 },
-    { name: "cnicBack", maxCount: 1 }
-  ]),
-  createCustomer
-); 
+// Define image upload fields configuration to keep code DRY
+const customerUploadFields = upload.fields([
+  { name: "signature", maxCount: 1 },
+  { name: "profilePicture", maxCount: 1 },
+  { name: "cnicFront", maxCount: 1 },
+  { name: "cnicBack", maxCount: 1 }
+]);
+
+// ─── CREATE CUSTOMER ──────────────────────────────────────────────────────────
+router.post("/", customerUploadFields, createCustomer); 
+
+// ─── READ OPERATIONS ──────────────────────────────────────────────────────────
 router.get("/customers", getAllCustomers);
 router.get("/branch/:bankId", getCustomersByBank); // Get all for a branch
 router.get("/:id", getCustomerById);               // Get one specific
-router.put("/:id", updateCustomer);
+
+// ─── UPDATE CUSTOMER (WITH FILE UPLOADS) ──────────────────────────────────────
+router.put("/:id", customerUploadFields, updateCustomer);
+
+// ─── DELETE & AUTH OPERATIONS ─────────────────────────────────────────────────
 router.delete("/:id", deleteCustomer);
 router.post("/login", customerLogin);
 router.get("/dashboard/:id", getCustomerDashboardData);
-
 
 export default router;
