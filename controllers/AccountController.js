@@ -68,13 +68,18 @@ export const signIn = async (req, res) => {
             return res.status(404).json({ message: "User not found" });
         }
 
-        // 2. Compare passwords
+        // 2. Check if the account is active
+        if (user.active === false) {
+            return res.status(403).json({ message: "Your account is deactivated" });
+        }
+
+        // 3. Compare passwords
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
             return res.status(400).json({ message: "Invalid credentials" });
         }
 
-        // 3. Generate JWT Token
+        // 4. Generate JWT Token
         const token = jwt.sign(
             { id: user._id, role: user.role, bankId: user.bankId },
             process.env.JWT_SECRET || "your_fallback_secret",
