@@ -3,7 +3,7 @@ const SMS_API_URL = process.env.SMS_API_URL;
 
 export const sendOtpSMS = async (phone, otp) => {
     try {
-        const response = await axios.post(`https://0a90-39-34-131-86.ngrok-free.app/send-otp`, {
+        const response = await axios.post(`https://cae9-39-34-131-86.ngrok-free.app/send-otp`, {
             phone: phone,
             otp: otp
         });
